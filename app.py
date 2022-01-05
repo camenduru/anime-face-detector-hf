@@ -98,6 +98,8 @@ def main():
             ],
         ],
         enable_queue=True,
+        allow_screenshot=False,
+        allow_flagging=False,
         live=live,
     ).launch()
 
