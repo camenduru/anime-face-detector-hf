@@ -3,7 +3,7 @@
 import mim
 
 mim.uninstall('mmcv-full', confirm_yes=True)
-mim.install('mmcv-full', is_yes=True)
+mim.install('mmcv-full==1.3.16', is_yes=True)
 
 import functools
 import pathlib
