@@ -1,25 +1,67 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import mim
 
 mim.uninstall('mmcv-full', confirm_yes=True)
 mim.install('mmcv-full==1.3.16', is_yes=True)
 
+import argparse
 import functools
+import os
 import pathlib
+import tarfile
 
+import anime_face_detector
 import cv2
 import gradio as gr
+import huggingface_hub
 import numpy as np
 import PIL.Image
 import torch
 
-import anime_face_detector
+TOKEN = os.environ['TOKEN']
 
 
-def detect(img, face_score_threshold: float, landmark_score_threshold: float,
-           detector: anime_face_detector.LandmarkDetector) -> PIL.Image.Image:
-    image = cv2.imread(img.name)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--device', type=str, default='cpu')
+    parser.add_argument('--detector', type=str, default='yolov3')
+    parser.add_argument('--face-score-slider-step', type=float, default=0.05)
+    parser.add_argument('--face-score-threshold', type=float, default=0.5)
+    parser.add_argument('--landmark-score-slider-step',
+                        type=float,
+                        default=0.05)
+    parser.add_argument('--landmark-score-threshold', type=float, default=0.3)
+    parser.add_argument('--theme', type=str, default='dark-grass')
+    parser.add_argument('--live', action='store_true')
+    parser.add_argument('--share', action='store_true')
+    parser.add_argument('--port', type=int)
+    parser.add_argument('--disable-queue',
+                        dest='enable_queue',
+                        action='store_false')
+    parser.add_argument('--allow-flagging', type=str, default='never')
+    parser.add_argument('--allow-screenshot', action='store_true')
+    return parser.parse_args()
+
+
+def load_sample_image_paths() -> list[pathlib.Path]:
+    image_dir = pathlib.Path('images')
+    if not image_dir.exists():
+        dataset_repo = 'hysts/sample-images-TADNE'
+        path = huggingface_hub.hf_hub_download(dataset_repo,
+                                               'images.tar.gz',
+                                               repo_type='dataset',
+                                               use_auth_token=TOKEN)
+        with tarfile.open(path) as f:
+            f.extractall()
+    return sorted(image_dir.glob('*'))
+
+
+def detect(image, face_score_threshold: float, landmark_score_threshold: float,
+           detector: anime_face_detector.LandmarkDetector) -> np.ndarray:
+    image = cv2.imread(image.name)
     preds = detector(image)
 
     res = image.copy()
@@ -43,33 +85,30 @@ def detect(img, face_score_threshold: float, landmark_score_threshold: float,
             pt = np.round(pt).astype(int)
             cv2.circle(res, tuple(pt), lt, color, cv2.FILLED)
     res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
-
-    image_pil = PIL.Image.fromarray(res)
-    return image_pil
+    return res
 
 
 def main():
-    sample_path = pathlib.Path('input.jpg')
-    if not sample_path.exists():
-        torch.hub.download_url_to_file(
-            'https://raw.githubusercontent.com/hysts/anime-face-detector/main/assets/input.jpg',
-            sample_path.as_posix())
+    gr.close_all()
 
-    detector_name = 'yolov3'
-    device = 'cpu'
-    score_slider_step = 0.05
-    face_score_threshold = 0.5
-    landmark_score_threshold = 0.3
-    live = False
+    args = parse_args()
+    device = torch.device(args.device)
 
-    detector = anime_face_detector.create_detector(detector_name,
+    image_paths = load_sample_image_paths()
+    examples = [[
+        path.as_posix(), args.face_score_threshold,
+        args.landmark_score_threshold
+    ] for path in image_paths]
+
+    detector = anime_face_detector.create_detector(args.detector,
                                                    device=device)
     func = functools.partial(detect, detector=detector)
     func = functools.update_wrapper(func, detect)
 
+    repo_url = 'https://github.com/hysts/anime-face-detector'
     title = 'hysts/anime-face-detector'
-    description = 'Demo for hysts/anime-face-detector. To use it, simply upload your image, or click one of the examples to load them. Read more at the links below.'
-    article = "<a href='https://github.com/hysts/anime-face-detector'>GitHub Repo</a>"
+    description = f'A demo for {repo_url}'
+    article = None
 
     gr.Interface(
         func,
@@ -77,31 +116,29 @@ def main():
             gr.inputs.Image(type='file', label='Input'),
             gr.inputs.Slider(0,
                              1,
-                             step=score_slider_step,
-                             default=face_score_threshold,
+                             step=args.face_score_slider_step,
+                             default=args.face_score_threshold,
                              label='Face Score Threshold'),
             gr.inputs.Slider(0,
                              1,
-                             step=score_slider_step,
-                             default=landmark_score_threshold,
+                             step=args.landmark_score_slider_step,
+                             default=args.landmark_score_threshold,
                              label='Landmark Score Threshold'),
         ],
-        gr.outputs.Image(type='pil', label='Output'),
+        gr.outputs.Image(label='Output'),
+        theme=args.theme,
         title=title,
         description=description,
         article=article,
-        examples=[
-            [
-                sample_path.as_posix(),
-                face_score_threshold,
-                landmark_score_threshold,
-            ],
-        ],
-        enable_queue=True,
-        allow_screenshot=False,
-        allow_flagging=False,
-        live=live,
-    ).launch()
+        examples=examples,
+        allow_screenshot=args.allow_screenshot,
+        allow_flagging=args.allow_flagging,
+        live=args.live,
+    ).launch(
+        enable_queue=args.enable_queue,
+        server_port=args.port,
+        share=args.share,
+    )
 
 
 if __name__ == '__main__':
