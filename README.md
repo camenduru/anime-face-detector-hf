@@ -1,5 +1,5 @@
 ---
-title: Anime Face Detector Demo
+title: Anime Face Detector
 emoji: 😻
 colorFrom: pink
 colorTo: indigo

@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
                         type=float,
                         default=0.05)
     parser.add_argument('--landmark-score-threshold', type=float, default=0.3)
-    parser.add_argument('--theme', type=str, default='dark-grass')
+    parser.add_argument('--theme', type=str)
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--share', action='store_true')
     parser.add_argument('--port', type=int)
