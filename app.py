@@ -11,14 +11,18 @@ import argparse
 import functools
 import os
 import pathlib
+import subprocess
 import tarfile
+
+subprocess.call('pip uninstall -y opencv-python'.split())
+subprocess.call('pip uninstall -y opencv-python-headless'.split())
+subprocess.call('pip install opencv-python-headless'.split())
 
 import anime_face_detector
 import cv2
 import gradio as gr
 import huggingface_hub
 import numpy as np
-import PIL.Image
 import torch
 
 TOKEN = os.environ['TOKEN']
