@@ -36,7 +36,6 @@ TOKEN = os.environ['TOKEN']
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--detector', type=str, default='yolov3')
     parser.add_argument('--face-score-slider-step', type=float, default=0.05)
     parser.add_argument('--face-score-threshold', type=float, default=0.5)
     parser.add_argument('--landmark-score-slider-step',
@@ -69,9 +68,12 @@ def load_sample_image_paths() -> list[pathlib.Path]:
     return sorted(image_dir.glob('*'))
 
 
-def detect(image: np.ndarray, face_score_threshold: float,
-           landmark_score_threshold: float,
-           detector: anime_face_detector.LandmarkDetector) -> np.ndarray:
+def detect(
+        image: np.ndarray, detector_name: str, face_score_threshold: float,
+        landmark_score_threshold: float,
+        detectors: dict[str,
+                        anime_face_detector.LandmarkDetector]) -> np.ndarray:
+    detector = detectors[detector_name]
     # RGB -> BGR
     image = image[:, :, ::-1]
     preds = detector(image)
@@ -107,21 +109,32 @@ def main():
     args = parse_args()
     device = torch.device(args.device)
 
+    detector_names = ['faster-rcnn', 'yolov3']
+    detectors = {
+        detector_name: anime_face_detector.create_detector(detector_name,
+                                                           device=device)
+        for detector_name in detector_names
+    }
+
+    func = functools.partial(detect, detectors=detectors)
+    func = functools.update_wrapper(func, detect)
+
     image_paths = load_sample_image_paths()
     examples = [[
-        path.as_posix(), args.face_score_threshold,
-        args.landmark_score_threshold
+        path.as_posix(),
+        'yolov3',
+        args.face_score_threshold,
+        args.landmark_score_threshold,
     ] for path in image_paths]
-
-    detector = anime_face_detector.create_detector(args.detector,
-                                                   device=device)
-    func = functools.partial(detect, detector=detector)
-    func = functools.update_wrapper(func, detect)
 
     gr.Interface(
         func,
         [
             gr.inputs.Image(type='numpy', label='Input'),
+            gr.inputs.Radio(detector_names,
+                            type='value',
+                            default='yolov3',
+                            label='Detector'),
             gr.inputs.Slider(0,
                              1,
                              step=args.face_score_slider_step,
