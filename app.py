@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-import mim
-
-mim.uninstall('mmcv-full', confirm_yes=True)
-mim.install('mmcv-full==1.3.16', is_yes=True)
-
 import argparse
 import functools
 import os
@@ -14,9 +9,15 @@ import pathlib
 import subprocess
 import tarfile
 
-subprocess.call('pip uninstall -y opencv-python'.split())
-subprocess.call('pip uninstall -y opencv-python-headless'.split())
-subprocess.call('pip install opencv-python-headless'.split())
+import mim
+
+if os.environ.get('SYSTEM') == 'spaces':
+    mim.uninstall('mmcv-full', confirm_yes=True)
+    mim.install('mmcv-full==1.3.16', is_yes=True)
+
+    subprocess.call('pip uninstall -y opencv-python'.split())
+    subprocess.call('pip uninstall -y opencv-python-headless'.split())
+    subprocess.call('pip install opencv-python-headless'.split())
 
 import anime_face_detector
 import cv2
@@ -30,7 +31,6 @@ TOKEN = os.environ['TOKEN']
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--detector', type=str, default='yolov3')
     parser.add_argument('--face-score-slider-step', type=float, default=0.05)
     parser.add_argument('--face-score-threshold', type=float, default=0.5)
@@ -38,6 +38,7 @@ def parse_args() -> argparse.Namespace:
                         type=float,
                         default=0.05)
     parser.add_argument('--landmark-score-threshold', type=float, default=0.3)
+    parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--theme', type=str)
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--share', action='store_true')
@@ -130,11 +131,11 @@ def main():
                              label='Landmark Score Threshold'),
         ],
         gr.outputs.Image(label='Output'),
-        theme=args.theme,
+        examples=examples,
         title=title,
         description=description,
         article=article,
-        examples=examples,
+        theme=args.theme,
         allow_screenshot=args.allow_screenshot,
         allow_flagging=args.allow_flagging,
         live=args.live,
