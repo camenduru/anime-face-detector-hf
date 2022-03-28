@@ -26,6 +26,11 @@ import huggingface_hub
 import numpy as np
 import torch
 
+REPO_URL = 'https://github.com/hysts/anime-face-detector'
+TITLE = 'hysts/anime-face-detector'
+DESCRIPTION = f'A demo for {REPO_URL}'
+ARTICLE = None
+
 TOKEN = os.environ['TOKEN']
 
 
@@ -110,11 +115,6 @@ def main():
     func = functools.partial(detect, detector=detector)
     func = functools.update_wrapper(func, detect)
 
-    repo_url = 'https://github.com/hysts/anime-face-detector'
-    title = 'hysts/anime-face-detector'
-    description = f'A demo for {repo_url}'
-    article = None
-
     gr.Interface(
         func,
         [
@@ -132,9 +132,9 @@ def main():
         ],
         gr.outputs.Image(label='Output'),
         examples=examples,
-        title=title,
-        description=description,
-        article=article,
+        title=TITLE,
+        description=DESCRIPTION,
+        article=ARTICLE,
         theme=args.theme,
         allow_screenshot=args.allow_screenshot,
         allow_flagging=args.allow_flagging,
