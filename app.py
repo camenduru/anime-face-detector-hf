@@ -69,9 +69,11 @@ def load_sample_image_paths() -> list[pathlib.Path]:
     return sorted(image_dir.glob('*'))
 
 
-def detect(image, face_score_threshold: float, landmark_score_threshold: float,
+def detect(image: np.ndarray, face_score_threshold: float,
+           landmark_score_threshold: float,
            detector: anime_face_detector.LandmarkDetector) -> np.ndarray:
-    image = cv2.imread(image.name)
+    # RGB -> BGR
+    image = image[:, :, ::-1]
     preds = detector(image)
 
     res = image.copy()
@@ -118,7 +120,7 @@ def main():
     gr.Interface(
         func,
         [
-            gr.inputs.Image(type='file', label='Input'),
+            gr.inputs.Image(type='numpy', label='Input'),
             gr.inputs.Slider(0,
                              1,
                              step=args.face_score_slider_step,
@@ -130,7 +132,7 @@ def main():
                              default=args.landmark_score_threshold,
                              label='Landmark Score Threshold'),
         ],
-        gr.outputs.Image(label='Output'),
+        gr.outputs.Image(type='numpy', label='Output'),
         examples=examples,
         title=TITLE,
         description=DESCRIPTION,
