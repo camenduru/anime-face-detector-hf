@@ -84,9 +84,10 @@ def detect(image: np.ndarray, face_score_threshold: float,
             continue
         box = np.round(box).astype(int)
 
-        lt = max(2, int(3 * (box[2:] - box[:2]).max() / 256))
+        line_width = max(2, int(3 * (box[2:] - box[:2]).max() / 256))
 
-        cv2.rectangle(res, tuple(box[:2]), tuple(box[2:]), (0, 255, 0), lt)
+        cv2.rectangle(res, tuple(box[:2]), tuple(box[2:]), (0, 255, 0),
+                      line_width)
 
         pred_pts = pred['keypoints']
         for *pt, score in pred_pts:
@@ -95,7 +96,7 @@ def detect(image: np.ndarray, face_score_threshold: float,
             else:
                 color = (0, 0, 255)
             pt = np.round(pt).astype(int)
-            cv2.circle(res, tuple(pt), lt, color, cv2.FILLED)
+            cv2.circle(res, tuple(pt), line_width, color, cv2.FILLED)
     res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
     return res
 
