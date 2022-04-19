@@ -5,7 +5,7 @@ colorFrom: pink
 colorTo: indigo
 sdk: gradio
 app_file: app.py
-pinned: true
+pinned: false
 ---
 
 # Configuration
