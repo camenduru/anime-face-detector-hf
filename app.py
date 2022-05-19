@@ -9,9 +9,9 @@ import pathlib
 import subprocess
 import tarfile
 
-import mim
-
 if os.environ.get('SYSTEM') == 'spaces':
+    import mim
+
     mim.uninstall('mmcv-full', confirm_yes=True)
     mim.install('mmcv-full==1.3.16', is_yes=True)
 
@@ -26,22 +26,15 @@ import huggingface_hub
 import numpy as np
 import torch
 
-REPO_URL = 'https://github.com/hysts/anime-face-detector'
 TITLE = 'hysts/anime-face-detector'
-DESCRIPTION = f'A demo for {REPO_URL}'
-ARTICLE = None
+DESCRIPTION = 'This is a demo for https://github.com/hysts/anime-face-detector.'
+ARTICLE = '<center><img src="https://visitor-badge.glitch.me/badge?page_id=hysts.anime-face-detector" alt="visitor badge"/></center>'
 
 TOKEN = os.environ['TOKEN']
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--face-score-slider-step', type=float, default=0.05)
-    parser.add_argument('--face-score-threshold', type=float, default=0.5)
-    parser.add_argument('--landmark-score-slider-step',
-                        type=float,
-                        default=0.05)
-    parser.add_argument('--landmark-score-threshold', type=float, default=0.3)
     parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--theme', type=str)
     parser.add_argument('--live', action='store_true')
@@ -99,13 +92,10 @@ def detect(
                 color = (0, 0, 255)
             pt = np.round(pt).astype(int)
             cv2.circle(res, tuple(pt), line_width, color, cv2.FILLED)
-    res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
-    return res
+    return res[:, :, ::-1]
 
 
 def main():
-    gr.close_all()
-
     args = parse_args()
     device = torch.device(args.device)
 
@@ -120,12 +110,7 @@ def main():
     func = functools.update_wrapper(func, detect)
 
     image_paths = load_sample_image_paths()
-    examples = [[
-        path.as_posix(),
-        'yolov3',
-        args.face_score_threshold,
-        args.landmark_score_threshold,
-    ] for path in image_paths]
+    examples = [[path.as_posix(), 'yolov3', 0.5, 0.3] for path in image_paths]
 
     gr.Interface(
         func,
@@ -135,16 +120,11 @@ def main():
                             type='value',
                             default='yolov3',
                             label='Detector'),
-            gr.inputs.Slider(0,
-                             1,
-                             step=args.face_score_slider_step,
-                             default=args.face_score_threshold,
-                             label='Face Score Threshold'),
-            gr.inputs.Slider(0,
-                             1,
-                             step=args.landmark_score_slider_step,
-                             default=args.landmark_score_threshold,
-                             label='Landmark Score Threshold'),
+            gr.inputs.Slider(
+                0, 1, step=0.05, default=0.5, label='Face Score Threshold'),
+            gr.inputs.Slider(
+                0, 1, step=0.05, default=0.3,
+                label='Landmark Score Threshold'),
         ],
         gr.outputs.Image(type='numpy', label='Output'),
         examples=examples,
