@@ -9,15 +9,15 @@ import pathlib
 import subprocess
 import tarfile
 
-if os.environ.get('SYSTEM') == 'spaces':
-    import mim
+# if os.environ.get('SYSTEM') == 'spaces':
+#     import mim
 
-    mim.uninstall('mmcv-full', confirm_yes=True)
-    mim.install('mmcv-full==1.3.16', is_yes=True)
+#     mim.uninstall('mmcv-full', confirm_yes=True)
+#     mim.install('mmcv-full==1.3.16', is_yes=True)
 
-    subprocess.call('pip uninstall -y opencv-python'.split())
-    subprocess.call('pip uninstall -y opencv-python-headless'.split())
-    subprocess.call('pip install opencv-python-headless'.split())
+#     subprocess.call('pip uninstall -y opencv-python'.split())
+#     subprocess.call('pip uninstall -y opencv-python-headless'.split())
+#     subprocess.call('pip install opencv-python-headless'.split())
 
 import anime_face_detector
 import cv2
@@ -30,7 +30,7 @@ TITLE = 'hysts/anime-face-detector'
 DESCRIPTION = 'This is a demo for https://github.com/hysts/anime-face-detector.'
 ARTICLE = '<center><img src="https://visitor-badge.glitch.me/badge?page_id=hysts.anime-face-detector" alt="visitor badge"/></center>'
 
-TOKEN = os.environ['TOKEN']
+# TOKEN = os.environ['TOKEN']
 
 
 def parse_args() -> argparse.Namespace:
@@ -54,8 +54,7 @@ def load_sample_image_paths() -> list[pathlib.Path]:
         dataset_repo = 'hysts/sample-images-TADNE'
         path = huggingface_hub.hf_hub_download(dataset_repo,
                                                'images.tar.gz',
-                                               repo_type='dataset',
-                                               use_auth_token=TOKEN)
+                                               repo_type='dataset')
         with tarfile.open(path) as f:
             f.extractall()
     return sorted(image_dir.glob('*'))
